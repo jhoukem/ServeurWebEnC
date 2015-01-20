@@ -1,0 +1,4 @@
+Chapitre 3:
+1. Le deuxieme client est en attente car read et write sont bloquants.
+2.Le client se connecte et se deconnecte juste après, permet de tester la connexion-> aucun affichage
+3.
