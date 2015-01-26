@@ -34,14 +34,12 @@ if(serveur == -1){
 
  while(1){
  int socket_client ;
+ int f;
  socket_client=accept(serveur, NULL , NULL);
- if ( socket_client == -1)
- {
- perror ("accept");
- return -1;
- }
- 
- const char * message_bienvenue ="Bonjour ,Marhaba , Onaya \n Bienvenu sur le serveur web de C\n Ici nous avons à implementer un long message\n au moins dix lignes !!!\n vous rendez vous compte\n c'est quasiment impossible\n enfin sauf si on abuse\n des backslash n\n encore un petit dernier pr la route\nsdfsfsfjsdkjfskdjfksjfksjdfjs\nsdjhfgskjgfshdgfsdfhsfh\njsdkhfkjsdhfjksdhfjsdhfjsdhfjsdhfjhsjehehfjsehf\nshfsoieuijfsdjfosdujfioseufoijf\n" ;
+ f = fork();
+if(f==0)
+{
+const char * message_bienvenue ="Bonjour ,Marhaba , Onaya \n Bienvenu sur le serveur web de C\n Ici nous avons à implementer un long message\n au moins dix lignes !!!\n vous rendez vous compte\n c'est quasiment impossible\n enfin sauf si on abuse\n des backslash n\n encore un petit dernier pr la route\nsdfsfsfjsdkjfskdjfksjfksjdfjs\nsdjhfgskjgfshdgfsdfhsfh\njsdkhfkjsdhfjksdhfjsdhfjsdhfjsdhfjhsjehehfjsehf\nshfsoieuijfsdjfosdujfioseufoijf\n" ;
  sleep(1);
  write(socket_client,message_bienvenue,strlen(message_bienvenue));
 int taille;
@@ -50,6 +48,22 @@ int buffer[BUFF_SIZE];
  {
 	write(socket_client, buffer, taille);
  }
+	printf("fils");
+}
+else if(f > 0)
+{
+close(socket_client);
+}
+else if(f<0)
+{
+perror("erreur fork negatif");
+}
+ if ( socket_client == -1)
+ {
+ perror ("accept");
+ return -1;
+ }
+ 
  }
 return 0;
 }
