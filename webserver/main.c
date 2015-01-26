@@ -12,10 +12,25 @@
 
 #define BUFF_SIZE 1000
 
+
+void initialiser_signaux(void)
+{
+  if(signal(SIGPIPE,SIG_IGN) == SIG_ERR)
+   {
+     perror("signal");
+   }
+}
+
+
 int main ()
 {
-
+ initialiser_signaux();
  int serveur=creer_serveur(8000);
+
+if(serveur == -1){
+  perror("creer serveur"); 
+  return -1;
+}
 
  while(1){
  int socket_client ;
@@ -26,7 +41,7 @@ int main ()
  return -1;
  }
  
- const char * message_bienvenue ="Bonjour ,Marhaba , Onaya \n Bienvenu sur le serveur web de C\n Ici nous avons à implementer un long message\n au moins dix lignes !!!\n vous rendez vous compte\n c'est quasiment impossible\n enfin sauf si on abuse\n des backslash n\n encore un petit dernier pr la route" ;
+ const char * message_bienvenue ="Bonjour ,Marhaba , Onaya \n Bienvenu sur le serveur web de C\n Ici nous avons à implementer un long message\n au moins dix lignes !!!\n vous rendez vous compte\n c'est quasiment impossible\n enfin sauf si on abuse\n des backslash n\n encore un petit dernier pr la route\nsdfsfsfjsdkjfskdjfksjfksjdfjs\nsdjhfgskjgfshdgfsdfhsfh\njsdkhfkjsdhfjksdhfjsdhfjsdhfjsdhfjhsjehehfjsehf\nshfsoieuijfsdjfosdujfioseufoijf\n" ;
  sleep(1);
  write(socket_client,message_bienvenue,strlen(message_bienvenue));
 int taille;

@@ -6,6 +6,8 @@
 #include<sys/types.h>
 #include <sys/un.h>
 #include <string.h>
+#include <signal.h>
+
 
 
 
@@ -30,7 +32,7 @@ int creer_serveur (int port)
  
 if (setsockopt(socket_serveur, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(int)) == -1)
 {
-	perror (" Can not set SO_REUSEADDR option ");
+	perror ("Can not set SO_REUSEADDR option ");
 	return -1;
 }
 if (bind(socket_serveur,(struct sockaddr *) &saddr , sizeof(saddr)) == -1)
@@ -46,7 +48,7 @@ if (bind(socket_serveur,(struct sockaddr *) &saddr , sizeof(saddr)) == -1)
       return -1;
       /* traitement d ’ erreur */
     }
-
+	
   return socket_serveur;
 }
 
