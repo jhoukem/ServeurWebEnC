@@ -26,10 +26,11 @@ int main ()
  return -1;
  }
  
- const char * message_bienvenue ="Bonjour ,Marhaba , Onaya \n Bienvenu sur le serveur web de C\n Ici nous avons à implementer un long message\n au moins dix lignes !!!\n vous rendez vous comptes\n c'est bquasiment impossible\n enfin sauf si on abuse\n des backslash n hehe\n enore un petit dernier pr la route" ;
+ const char * message_bienvenue ="Bonjour ,Marhaba , Onaya \n Bienvenu sur le serveur web de C\n Ici nous avons à implementer un long message\n au moins dix lignes !!!\n vous rendez vous compte\n c'est quasiment impossible\n enfin sauf si on abuse\n des backslash n\n encore un petit dernier pr la route" ;
  sleep(1);
  write(socket_client,message_bienvenue,strlen(message_bienvenue));
 int taille;
+int buffer[BUFF_SIZE];
  while ((taille = read(socket_client, buffer, BUFF_SIZE))>0)
 {
 	write(socket_client, buffer, taille);
