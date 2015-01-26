@@ -37,7 +37,11 @@ void initialiser_signaux(void)
   }
 
 }
+int check_first_line(char *s)
+{
 
+
+}
 
 void traiter_client(int socket_client)
 {
@@ -51,6 +55,12 @@ char buffer[BUFF_SIZE];
 
 const char *mode = "w+";
 FILE *fi = fdopen(socket_client,mode);
+/*
+if(check_first_line(fgets(buffer,BUFF_SIZE,fi)) == 1)
+{
+
+}
+*/
 
 while (fgets(buffer,BUFF_SIZE,fi) != NULL)   
    {

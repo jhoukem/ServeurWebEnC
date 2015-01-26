@@ -54,7 +54,7 @@ FILE *fi = fdopen(socket_client,mode);
 
 while (fgets(buffer,BUFF_SIZE,fi) != NULL)   
    {
-     printf("<Cherokee>%s\n",buffer);
+     printf("<Cherokee>%s",buffer);
    /* fprintf(fi,"<Cherokee>%s\n",buffer);*/
    }
 
