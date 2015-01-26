@@ -52,10 +52,12 @@ char buffer[BUFF_SIZE];
 const char *mode = "w+";
 FILE *fi = fdopen(socket_client,mode);
 
-while (  fgets(buffer,BUFF_SIZE,fi) != NULL)   
+while (fgets(buffer,BUFF_SIZE,fi) != NULL)   
    {
-    fprintf(fi,"<Cherokee>%s",buffer);
+     printf("<Cherokee>%s\n",buffer);
+   /* fprintf(fi,"<Cherokee>%s\n",buffer);*/
    }
+
 /*
  while ((taille = read(socket_client, buffer, BUFF_SIZE))>0) //fgets
  {
