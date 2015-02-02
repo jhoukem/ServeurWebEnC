@@ -2,6 +2,7 @@
 #include <string.h>
 #include <string.h>
 #include "socket.h"
+#include "traiter_client.h"
 #include<sys/socket.h>
 #include<netinet/in.h>
 #include<netinet/ip.h>
@@ -12,6 +13,33 @@
 
 
 
+void initialiser_signaux(void)
+{
+  if(signal(SIGPIPE,SIG_IGN) == SIG_ERR)
+   {
+     perror("signal");
+   }
+ struct sigaction sa;
+  sa.sa_handler = traitement_signal;
+  sigemptyset(&sa.sa_mask);
+  sa.sa_flags = SA_RESTART;
+  if (sigaction(SIGCHLD, &sa ,NULL) == -1)
+  {
+   perror("sigaction(SIGCHLD)");
+  }
+}
+
+void traitement_signal(int sig)
+{ 
+  while(waitpid(-1,NULL,WNOHANG) == 0);
+  printf("Signal %d reçu\n" ,sig);
+}
+
+
+
+/**
+Main !
+**/
 
 int main ()
 {
@@ -25,27 +53,25 @@ int main ()
  while(1){
    int socket_client ;
    int f;
-   socket_client=accept(serveur, NULL , NULL);
+   socket_client = accept(serveur, NULL , NULL);
+  if (socket_client == -1)/*erreur socket client*/
+  {
+    perror ("accept");
+    return -1;
+  }
    f = fork();
-  if(f==0)
+  if(f == 0)/*dans le fils on traite le client*/
   {
     traiter_client(socket_client);
    }
-  else if(f > 0)
+  else if(f > 0)/*Dans le père, on ferme la socket*/
   {
-
    close(socket_client);
   }
-  else if(f<0)
+  else if(f < 0)/*Erreur*/
   {
    perror("erreur fork negatif");
-  }
-  if ( socket_client == -1)
-  {
-   perror ("accept");
-   return -1;
-  }
- 
+  } 
  }
 return 0;
 }
