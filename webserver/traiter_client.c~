@@ -67,7 +67,7 @@ void traiter_client(int socket_client)
      printf("<Cherokee>%s",buffer2);
    else{
      strcat(buffer2,buffer);
-     const char * msg = "Chaque message doit se terminer par '\\n'\n";
+     const char * msg = "Chaque message doit se terminer par '\\r\\n'\n";
      write(socket_client,msg,strlen(msg));
    }
      

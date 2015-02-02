@@ -54,12 +54,12 @@ void traiter_client(int socket_client)
 
   const char *mode = "w+";
   FILE *fi = fdopen(socket_client,mode);
- /* fgets(buffer,BUFF_SIZE,fi);
+ fgets(buffer,BUFF_SIZE,fi);
 
   if(check_first_line(buffer) == -1){
      printf("Erreur first line\n");
      exit(0);
-   }*/
+   }
    write(socket_client,message_bienvenue,strlen(message_bienvenue));
   while (fgets(buffer,BUFF_SIZE,fi) != NULL)   
   {
