@@ -3,9 +3,9 @@
 #include <string.h>
 #include "socket.h"
 #include "traiter_client.h"
-#include<sys/socket.h>
-#include<netinet/in.h>
-#include<netinet/ip.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -31,7 +31,17 @@ void initialiser_signaux(void)
 
 void traitement_signal(int sig)
 { 
-  while(waitpid(-1,NULL,WNOHANG) == 0);
+  if (sig == SIGCHLD)
+  {
+    int status;
+    while(waitpid(-1,&status,WNOHANG) > 0){
+        if (WIFSIGNALED(status))
+        {
+          printf("Fils tué par signal %d\n", WTERMSIG(status));
+        }
+    }
+      
+  }
   printf("Signal %d reçu\n" ,sig);
 }
 
