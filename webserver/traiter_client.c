@@ -27,7 +27,8 @@ int check_first_line(char ligne[])
        return -1;
   if(strlen(arg3) != 8)
        return -1;
-
+  if(arg2[0] != '/' || strlen(arg2) != 1)
+       return -2;
   if(strncmp(arg3,"HTTP/1.",7) != 0)
        return -1;
 
@@ -56,8 +57,12 @@ void traiter_client(int socket_client)
 	FILE *fi = fdopen(socket_client,mode);
 	fgets(buffer,BUFF_SIZE,fi);
 	/* verification de la requete: GET ... HTTP/1.x */
+
 	if(check_first_line(buffer) == -1){
 		request_ok = 0;
+	}
+	else if(check_first_line(buffer) == -2){
+		request_ok = -2;
 	}
 
 	/* Passer les entetes */
@@ -67,7 +72,7 @@ void traiter_client(int socket_client)
 			break;
 		printf("<Cherokee>%s",buffer);
 	}
-	if (request_ok)
+	if (request_ok == 1)
 	{
 		fprintf(fi, "HTTP/1.1 200 OK\r\n");
 		fprintf(fi, "Content-Length: %d\r\n", (int)strlen(message_bienvenue));
@@ -75,7 +80,7 @@ void traiter_client(int socket_client)
 		fprintf(fi, "%s", message_bienvenue);
 		fflush(fi);
 	}
-	else
+	else if(request_ok == 0)
 	{
 		const char * msg = "400 Bad request\n";
 		fprintf(fi, "HTTP/1.1 400 Bad request\r\n");
@@ -83,6 +88,14 @@ void traiter_client(int socket_client)
 		fprintf(fi, "\r\n");
 		fprintf(fi, "%s", msg);
 		fflush(fi);		
+	}
+	else if(request_ok == -2){
+		const char * msg = "404 Not Found\n";
+		fprintf(fi, "HTTP/1.1 404 Not Found\r\n");
+		fprintf(fi, "Content-Length: %d\r\n", (int)strlen(msg));
+		fprintf(fi, "\r\n");
+		fprintf(fi, "%s", msg);
+		fflush(fi);	
 	}	
 	exit(0);
 }
