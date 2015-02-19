@@ -3,9 +3,9 @@
 #include <string.h>
 #include "socket.h"
 #include "traiter_client.h"
-#include<sys/socket.h>
-#include<netinet/in.h>
-#include<netinet/ip.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -31,7 +31,17 @@ void initialiser_signaux(void)
 
 void traitement_signal(int sig)
 { 
-  while(waitpid(-1,NULL,WNOHANG) == 0);
+  if (sig == SIGCHLD)
+  {
+    int status;
+    while(waitpid(-1,&status,WNOHANG) > 0){
+        if (WIFSIGNALED(status))
+        {
+          printf("Fils tué par signal %d\n", WTERMSIG(status));
+        }
+    }
+      
+  }
   printf("Signal %d reçu\n" ,sig);
 }
 
@@ -41,8 +51,12 @@ void traitement_signal(int sig)
 Main !
 **/
 
-int main ()
+int main(int argc,char* argv [])
 {
+
+if(strcmp(argv[1], "webserver")== 0){
+
+ printf("%d\n",argc);
  initialiser_signaux();
  int serveur=creer_serveur(8000);
   if(serveur == -1){
@@ -54,27 +68,30 @@ int main ()
    int socket_client ;
    int f;
    socket_client = accept(serveur, NULL , NULL);
+  if (socket_client == -1)/*erreur socket client*/
+  {
+    perror ("accept");
+    return -1;
+  }
    f = fork();
-  if(f==0)
+  if(f == 0)/*dans le fils on traite le client*/
   {
     traiter_client(socket_client);
    }
-  else if(f > 0)
+  else if(f > 0)/*Dans le père, on ferme la socket*/
   {
-
    close(socket_client);
   }
-  else if(f<0)
+  else if(f < 0)/*Erreur*/
   {
    perror("erreur fork negatif");
-  }
-  if ( socket_client == -1)
-  {
-   perror ("accept");
-   return -1;
-  }
- 
+  } 
  }
+} // fin premier if
+else
+perror("erreur parametre");
+exit(0);
+
 return 0;
 }
 

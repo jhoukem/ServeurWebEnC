@@ -51,8 +51,12 @@ void traitement_signal(int sig)
 Main !
 **/
 
-int main ()
+int main(int argc,char* argv [])
 {
+
+if(strcmp(argv[1], "webserver")== 0){
+
+ printf("%d\n",argc);
  initialiser_signaux();
  int serveur=creer_serveur(8000);
   if(serveur == -1){
@@ -83,6 +87,11 @@ int main ()
    perror("erreur fork negatif");
   } 
  }
+} // fin premier if
+else
+perror("erreur parametre");
+exit(0);
+
 return 0;
 }
 
