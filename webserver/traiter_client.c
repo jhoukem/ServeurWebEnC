@@ -9,6 +9,8 @@
 #include <signal.h>
 #include <unistd.h>
 #include "http_request.h"
+#include <sys/stat.h>
+#include <fcntl.h>
 
 
 #define BUFF_SIZE 1000
@@ -67,7 +69,7 @@ int parse_http_request(const char *request_line,http_request *request){
   char arg3[50];
   
   sscanf(request_line,"%s %s %s",arg1,arg2,arg3);
-  printf("arg 1 %s , arg2 %s arg3 %s\n",arg1,arg2,arg3);
+  printf("arg 1 %s  arg2 %s arg3 %s\n",arg1,arg2,arg3);
   if(strcmp(arg1,"GET") != 0)
     return 0;
   if(strlen(arg3) != 8)
@@ -100,33 +102,54 @@ void skip_headers(FILE *client){
     {
       if(strcmp(buffer,"\n") == 0 || strcmp(buffer,"\r\n") == 0)
 	break;
-      //printf("<Cherokee>%s",buffer);
     }
 }
 
 
 void send_status(FILE *client, int code, const char *reason_phrase){
   
-  fprintf(client, "HTTP/1.1 %d %s\r\n",code,reason_phrase);
-  fprintf(client, "Content-Length: %d\r\n", (int)strlen(reason_phrase));
-  fprintf(client, "\r\n");
-  fprintf(client, "%s",reason_phrase);
-  fflush(client);	
+  fprintf(client, "HTTP/1.1 %d %s\r\n",code,reason_phrase);	
 }
 
 void send_response (FILE * client , int code ,const char * reason_phrase  ,const char * message_body){
-  send_status(client,code,reason_phrase);
-  
+  send_status(client,code,reason_phrase); 
+  fprintf(client, "Content-Length: %d\r\n", (int)strlen(message_body));  
+  fprintf(client, "\r\n");
   fprintf(client, "%s", message_body);
   fflush(client);	
+}
+
+ int get_file_size(int fd){
+  struct stat sb;
+  if (fstat(fd, &sb) == -1) {
+        return -1;
+  }
+  return sb.st_size;
+ }
+void send_file(FILE *client ,int code ,const char * reason_phrase  ,const char * message_body ,int fd){
+   send_status(client,code,reason_phrase); 
+   fprintf(client, "Content-Length: %d\r\n", get_file_size(fd));  
+   fprintf(client, "\r\n");
+   fprintf(client, "%s", message_body);
+   fflush(client);
+}
+
+
+int copy(int in, int out){
+	char buff[BUFF_SIZE];
+	int nb;
+	while((nb=read(in,buff,sizeof(buff)))>0){   //  ou bien != -1 
+    		write(out,buff,nb);
+	}
+  return nb;
 }
 
 
 char *rewrite_url(char *url){
   int i;
-  int taille =strlen(url);  
+  int taille = strlen(url);  
   
-  for(i=0; i< taille;i++){
+  for(i=0; i < taille;i++){
     if( url[i] == '?' ){     
       url[i]='\0';   
     }       
@@ -140,33 +163,51 @@ char *rewrite_url(char *url){
 int check_and_open(const char *url, const char *document_root){
     char ch1[50] = "";
     char ch2[50] = "";
-  
+    int ret = -1;
     strcat(ch1, url);
     strcat(ch2, document_root);
-    char * chemin = strcat(chemin2, chemin1);
+    char * chemin = strcat(ch2, ch1);
 
-    /*struct stat sb;
-    stat("m.html",sb);  // a revoir l'appel à stat()
-    switch (sb.st_mode) {
-    case S_IFDIR:  printf("répertoire\n");                break;
-    case S_IFREG:  printf("fichier ordinaire\n");         break;
-    default:       printf("inconnu ?\n");                 break;
-    }*/
+    struct stat sb;
+    if (stat(chemin, &sb) == -1) {
+        return ret;
+    } 
+    switch (sb.st_mode & S_IFMT) {
+ 	case S_IFREG: ret = open(chemin, O_RDONLY); break;
+ 	default:       printf("unknown?\n");                break;
+    }
+ 	printf("ret: %d\n",ret); 
+  return ret;
+
+/*	// autre possibilité d'utilisation de stat()
+	char *ch=strcat(document_root,url);
+	struct stat sb;
+        stat(ch, &sb);
+        if(S_ISREG(sb.st_mode)==0){
+		return -1;
+	}
+	int ret = open(ch,O_RDONLY,0666);
+	if(ret==-1){
+	  perror("erreur open");
+		return -1;
+	}
+	return ret;
+*/
 }
 
 
 
-
-void traiter_client(int socket_client)
+void traiter_client(int socket_client,const char * dr)
 {
   const char * message_bienvenue ="Bonjour ,Marhaba , Onaya \n Bienvenu sur le serveur web  de C\n Ici nous avons à implementer un long message\n au moins dix lignes !!!\n vous rendez vous compte\n c'est quasiment impossible\n enfin sauf si on abuse\n des backslash n\n encore un petit dernier pr la route\nsdfsfsfjsdkjfskdjfksjfksjdfjs\nsdjhfgskjgfshdgfsdfhsfh\njsdkhfkjsdhfjksdhfjsdhfjsdhfjsdhfjhsjehehfjsehf\nshfsoieuijfsdjfosdujfioseufoijf\n\r\n" ;
-  
+
   
   char buffer[BUFF_SIZE];
   
   const char *mode = "w+";
   
   int request_ok = 1;
+  int fd;	
   FILE *fi = fdopen(socket_client,mode);
   fgets(buffer,BUFF_SIZE,fi);
   
@@ -175,6 +216,7 @@ void traiter_client(int socket_client)
   if(parse_http_request(buffer,&requete) != 1){
     request_ok = 0;
   }
+  
   /* Passer les entetes */
   skip_headers(fi);
   
@@ -185,15 +227,15 @@ void traiter_client(int socket_client)
     }
   else if (requete.method == HTTP_UNSUPPORTED){
     send_response(fi,405,"Method Not Allowed","Method Not Allowed\r\n");
-  }
-  else if(strcmp(requete.url,"/") == 0){/*Ressource valide*/
-    
-    send_response(fi,200,"OK",message_bienvenue);
-    //free(requete.url);
   }	
-  else{/*Ressource invalide*/
+  else if( (fd = check_and_open(requete.url,dr) ) != -1){
+    	send_response(fi,200,"OK",message_bienvenue);
+	printf("TEST : %d",get_file_size(fd));
+  }      
+    //free(requete.url);	
+  else/*Ressource invalide*/
     send_response(fi,404,"Not Found","Not Found \r\n");
-			}		
+					
   exit(0);
 }
 

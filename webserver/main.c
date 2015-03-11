@@ -54,9 +54,9 @@ Main !
 int main(int argc,char* argv [])
 {
 
-if(strcmp(argv[1], "webserver")== 0){
+if(argc > 1){
 
- printf("%d\n",argc);
+ printf("%s\n",argv[1]);
  initialiser_signaux();
  int serveur=creer_serveur(8000);
   if(serveur == -1){
@@ -76,7 +76,7 @@ if(strcmp(argv[1], "webserver")== 0){
    f = fork();
   if(f == 0)/*dans le fils on traite le client*/
   {
-    traiter_client(socket_client);
+    traiter_client(socket_client,argv[1]);
    }
   else if(f > 0)/*Dans le père, on ferme la socket*/
   {
@@ -88,10 +88,10 @@ if(strcmp(argv[1], "webserver")== 0){
   } 
  }
 } // fin premier if
-else
-perror("erreur parametre");
+else{
+printf("Erreur de parametre\n");
 exit(0);
-
+}
 return 0;
 }
 

@@ -1,2 +1,2 @@
 int check_first_line(char *s);
-void traiter_client(int socket_client);
+void traiter_client(int socket_client,const char * dr);
