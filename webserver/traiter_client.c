@@ -68,6 +68,9 @@ int parse_http_request(const char *request_line,http_request *request){
   char arg2[50];
   char arg3[50];
   
+  if(strstr(request_line,"../")  != NULL)
+	return 2;
+
   sscanf(request_line,"%s %s %s",arg1,arg2,arg3);
   printf("arg 1 %s  arg2 %s arg3 %s\n",arg1,arg2,arg3);
   if(strcmp(arg1,"GET") != 0)
@@ -126,36 +129,41 @@ void send_response (FILE * client , int code ,const char * reason_phrase  ,const
   }
   return sb.st_size;
  }
-void send_file(FILE *client ,int code ,const char * reason_phrase  ,const char * message_body ,int fd){
-   send_status(client,code,reason_phrase); 
-   fprintf(client, "Content-Length: %d\r\n", get_file_size(fd));  
-   fprintf(client, "\r\n");
-   fprintf(client, "%s", message_body);
-   fflush(client);
-}
 
 
 int copy(int in, int out){
 	char buff[BUFF_SIZE];
 	int nb;
-	while((nb=read(in,buff,sizeof(buff)))>0){   //  ou bien != -1 
+	while((nb=read(in,buff,sizeof(buff)))>0){  
     		write(out,buff,nb);
 	}
   return nb;
 }
 
 
+void send_file(FILE *client ,int code ,const char * reason_phrase,int fd, char* type){
+   send_status(client,code,reason_phrase); 
+   fprintf(client, "Content-Length: %d\r\n", get_file_size(fd));  
+   fprintf(client, "Content-Type: %s\r\n",type);  
+   fprintf(client, "\r\n");
+   fflush(client);
+   copy(fd,fileno(client));
+}
+
+
+
+
 char *rewrite_url(char *url){
   int i;
   int taille = strlen(url);  
-  
+  if(taille == 1 && url[0] == '/'){
+  return "/index.html";
+  }
   for(i=0; i < taille;i++){
     if( url[i] == '?' ){     
       url[i]='\0';   
     }       
-  } 
-  
-  printf("url %s\n",url);   
+  }   
   return url;
 }
 
@@ -176,31 +184,30 @@ int check_and_open(const char *url, const char *document_root){
  	case S_IFREG: ret = open(chemin, O_RDONLY); break;
  	default:       printf("unknown?\n");                break;
     }
- 	printf("ret: %d\n",ret); 
   return ret;
 
-/*	// autre possibilité d'utilisation de stat()
-	char *ch=strcat(document_root,url);
-	struct stat sb;
-        stat(ch, &sb);
-        if(S_ISREG(sb.st_mode)==0){
-		return -1;
-	}
-	int ret = open(ch,O_RDONLY,0666);
-	if(ret==-1){
-	  perror("erreur open");
-		return -1;
-	}
-	return ret;
-*/
 }
+
+  char * getMimes(char mot[])
+  {
+
+   char* i = strrchr(mot,'.');
+   if(strcmp(i,".html")==0)
+	return "text/html";
+   if(strcmp(i,".png")==0)
+	return "image/png";
+   if(strcmp(i,".jpeg")==0)
+	return "image/jpeg";
+
+   return i;
+  }
 
 
 
 void traiter_client(int socket_client,const char * dr)
 {
-  const char * message_bienvenue ="Bonjour ,Marhaba , Onaya \n Bienvenu sur le serveur web  de C\n Ici nous avons à implementer un long message\n au moins dix lignes !!!\n vous rendez vous compte\n c'est quasiment impossible\n enfin sauf si on abuse\n des backslash n\n encore un petit dernier pr la route\nsdfsfsfjsdkjfskdjfksjfksjdfjs\nsdjhfgskjgfshdgfsdfhsfh\njsdkhfkjsdhfjksdhfjsdhfjsdhfjsdhfjhsjehehfjsehf\nshfsoieuijfsdjfosdujfioseufoijf\n\r\n" ;
-
+  /*const char * message_bienvenue ="Bonjour ,Marhaba , Onaya \n Bienvenu sur le serveur web  de C\n Ici nous avons à implementer un long message\n au moins dix lignes !!!\n vous rendez vous compte\n c'est quasiment impossible\n enfin sauf si on abuse\n des backslash n\n encore un petit dernier pr la route\nsdfsfsfjsdkjfskdjfksjfksjdfjs\nsdjhfgskjgfshdgfsdfhsfh\njsdkhfkjsdhfjksdhfjsdhfjsdhfjsdhfjhsjehehfjsehf\nshfsoieuijfsdjfosdujfioseufoijf\n\r\n" ;
+*/
   
   char buffer[BUFF_SIZE];
   
@@ -210,16 +217,16 @@ void traiter_client(int socket_client,const char * dr)
   int fd;	
   FILE *fi = fdopen(socket_client,mode);
   fgets(buffer,BUFF_SIZE,fi);
-  
+
   /* verification de la requete: GET ... HTTP/1.x */
   http_request requete;
-  if(parse_http_request(buffer,&requete) != 1){
-    request_ok = 0;
-  }
+  //if(parse_http_request(buffer,&requete) != 1){
+    request_ok = parse_http_request(buffer,&requete);
+  //}
   
   /* Passer les entetes */
   skip_headers(fi);
-  
+ 
   /*Requete valide*/
   if (!request_ok)
     {	
@@ -228,9 +235,13 @@ void traiter_client(int socket_client,const char * dr)
   else if (requete.method == HTTP_UNSUPPORTED){
     send_response(fi,405,"Method Not Allowed","Method Not Allowed\r\n");
   }	
-  else if( (fd = check_and_open(requete.url,dr) ) != -1){
-    	send_response(fi,200,"OK",message_bienvenue);
-	printf("TEST : %d",get_file_size(fd));
+  else if (request_ok == 2){
+    send_response(fi,403,"Syntax Error ","Syntax Error \r\n");
+  }
+  else if( (fd = check_and_open(rewrite_url(requete.url),dr) ) != -1){
+    	send_file(fi,200,"OK",fd, getMimes(rewrite_url(requete.url)));
+	//printf("TEST : %d",get_file_size(fd));
+	 // fileno() return un descripteur ->fichier
   }      
     //free(requete.url);	
   else/*Ressource invalide*/
