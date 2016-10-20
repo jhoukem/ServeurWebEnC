@@ -1,3 +1,0 @@
-main.o: main.c socket.h traiter_client.h
-socket.o: socket.c
-traiter_client.o: traiter_client.c http_request.h
